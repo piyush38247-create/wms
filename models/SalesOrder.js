@@ -12,7 +12,7 @@ const salesOrderSchema = mongoose.Schema({
   bin: { type: mongoose.Schema.Types.ObjectId, ref: 'bins', required: true },
   totalAmount: { type: Number, required: true },
   notes: { type: String },
-  status: { type: String, enum: ['pending', 'allocated', 'shipped'], default: 'pending' }
+  status: { type: String, enum: ['pending', 'allocated', 'shipped','paid'], default: 'pending' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('salesorders', salesOrderSchema);

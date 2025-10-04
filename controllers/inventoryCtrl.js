@@ -13,9 +13,39 @@ const getInventory = asyncHandler(async (req, res) => {
   res.json(inventory);
 });
 
+const createInventory = asyncHandler(async (req, res) => {
+  const { product, bin, quantity, reserved } = req.body;
 
+  if (!product || !bin || quantity === undefined) {
+    return res.status(400).json({ message: "Product, bin and quantity are required" });
+  }
 
+  const inv = await Inventory.create({ product, bin, quantity, reserved });
+  res.status(201).json({ message: "Inventory created successfully", inventory: inv });
+});
 
+// UPDATE inventory record
+const updateInventory = asyncHandler(async (req, res) => {
+  const { quantity, reserved } = req.body;
+
+  const inv = await Inventory.findById(req.params.id);
+  if (!inv) return res.status(404).json({ message: "Inventory not found" });
+
+  if (quantity !== undefined) inv.quantity = quantity;
+  if (reserved !== undefined) inv.reserved = reserved;
+
+  await inv.save();
+  res.json({ message: "Inventory updated successfully", inventory: inv });
+});
+
+// DELETE inventory record
+const deleteInventory = asyncHandler(async (req, res) => {
+  const inv = await Inventory.findById(req.params.id);
+  if (!inv) return res.status(404).json({ message: "Inventory not found" });
+
+  await inv.deleteOne();
+  res.json({ message: "Inventory deleted successfully" });
+});
 //  Receive stock (from PO)
 //  POST /api/inventory/receive
 const receiveStock = asyncHandler(async (req, res) => {
@@ -119,4 +149,4 @@ const adjustStock = asyncHandler(async (req, res) => {
   res.json({ message: 'Stock adjusted successfully', inventory: populatedInventory });
 });
 
-module.exports = { getInventory, receiveStock, shipStock, adjustStock };
+module.exports = {  getInventory, createInventory,  updateInventory, deleteInventory, receiveStock, shipStock, adjustStock };

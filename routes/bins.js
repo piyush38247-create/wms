@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const { getBins, createBin } = require('../controllers/binCtrl');
+const { getBins, createBin, updateBin, deleteBin } = require('../controllers/binCtrl');
+const { protect } = require('../middleware/auth'); 
 
-router.get('/', protect, getBins);
-router.post('/', protect, createBin);  
+router.route('/')
+  .get(protect, getBins)
+  .post(protect, createBin);
 
-module.exports = router; 
+router.route('/:id')
+  .put(protect, updateBin)
+  .delete(protect, deleteBin);
+
+module.exports = router;
+

@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const { getRacks, createRack } = require('../controllers/rackCtrl');
+const { getRacks, createRack, updateRack, deleteRack } = require('../controllers/rackCtrl');
+const { protect } = require('../middleware/auth'); 
 
-router.get('/', protect, getRacks);
-router.post('/', protect, createRack);
+router.route('/')
+  .get(protect, getRacks)
+  .post(protect, createRack);
+
+router.route('/:id')
+  .put(protect, updateRack)
+  .delete(protect, deleteRack);
 
 module.exports = router;
+

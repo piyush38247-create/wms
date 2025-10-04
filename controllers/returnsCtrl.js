@@ -4,8 +4,7 @@ const Inventory = require('../models/Inventory');
 const StockTransaction = require('../models/StockTransaction');
 const SalesOrder = require('../models/SalesOrder');
 
-//    Create a return record
-//   POST /api/returns
+// POST /api/returns - Create a return
 const createReturn = asyncHandler(async (req, res) => {
   const { salesOrderId, productId, quantity, reason, binId } = req.body;
 
@@ -45,4 +44,17 @@ const createReturn = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Return processed successfully', returned });
 });
 
-module.exports = { createReturn };
+// GET /api/returns - List all returns
+const getReturns = asyncHandler(async (req, res) => {
+  const returns = await Return.find({})
+    .populate('salesOrder', 'customer status totalAmount')
+    .populate('product', 'name sku');
+   res.json({
+    message: 'Returns fetched successfully',
+    returns
+  });
+});
+
+
+
+module.exports = { createReturn, getReturns};
