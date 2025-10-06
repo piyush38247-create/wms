@@ -17,9 +17,9 @@ router.route('/')
 
 router.route('/:id')
   .put(protect, updateInventory)
-  .delete(protect, deleteInventory);      
-router.post('/receive', protect, receiveStock);   
-router.post('/ship', protect, shipStock);        
-router.post('/adjust', protect, adjustStock);    
+  .delete(protect, deleteInventory);
+router.post('/receive', protect, receiveStock);
+router.post('/ship', protect, shipStock);
+router.post('/adjust', protect, adjustStock);
 
 module.exports = router;

@@ -1,10 +1,10 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const TokenBlacklist = require('../models/TokenBlacklist')
 
 const genToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-// Helper: send custom 500 error
 const handleServerError = (res, error) => {
   console.error('Server Error:', error.message);
   res.status(500).json({ message: 'Something went wrong on the server', error: error.message });
@@ -51,7 +51,7 @@ const login = asyncHandler(async (req, res) => {
 
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -74,4 +74,62 @@ const login = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = {signup, login, };
+
+const getuser = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id
+    const userData = await User.findOne({_id : userId})
+
+  
+   if(!userData){
+    return res.status(400).json({
+      success : false,
+      message : "user is not authenticated !"
+    })
+   }
+
+ 
+
+    res.json({
+      userData
+    });
+
+  } catch (error) {
+    handleServerError(res, error);
+  }
+});
+
+const logout = asyncHandler(async (req, res) => {
+  try {
+    const token = req.cookies.token || (req.headers.authorization?.split(' ')[1]);
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    const decoded = jwt.decode(token);
+
+    await TokenBlacklist.create({
+      token,
+      expiresAt: new Date(decoded.exp * 1000),
+    });
+
+    res.cookie('token', '', {
+      httpOnly: true,
+      expires: new Date(0),
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'User logged out successfully and token invalidated',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Logout failed', error: error.message });
+  }
+});
+
+
+module.exports = {signup, login, getuser,logout};

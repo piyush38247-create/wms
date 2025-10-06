@@ -21,6 +21,7 @@ const returnsRoutes = require('./routes/returns')
 const paymentRoutes = require('./routes/payments');
 const refundRoutes = require('./routes/refundRoutes');
 const reportRoutes = require('./routes/reports');
+const cartRoutes = require('./routes/cartRoutes')
 connectDB();
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/returns',returnsRoutes)
 app.use('/api/payments', paymentRoutes );
 app.use('/api/refunds', refundRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/cart',cartRoutes)
 // quick health route
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

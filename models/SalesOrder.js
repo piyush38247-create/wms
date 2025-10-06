@@ -5,6 +5,10 @@ const salesOrderSchema = mongoose.Schema({
   products: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'products', required: true },
+      name: { 
+          type: String,
+          required: true,
+        },
       quantity: { type: Number, required: true },
       price: { type: Number, required: true }
     }

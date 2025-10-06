@@ -4,7 +4,6 @@ const Inventory = require('../models/Inventory');
 const StockTransaction = require('../models/StockTransaction');
 const SalesOrder = require('../models/SalesOrder');
 
-// POST /api/returns - Create a return
 const createReturn = asyncHandler(async (req, res) => {
   const { salesOrderId, productId, quantity, reason, binId } = req.body;
 
@@ -15,7 +14,6 @@ const createReturn = asyncHandler(async (req, res) => {
   const salesOrder = await SalesOrder.findById(salesOrderId);
   if (!salesOrder) return res.status(404).json({ message: 'Sales Order not found' });
 
-  // Add stock back to inventory
   let inventory = await Inventory.findOne({ product: productId, bin: binId });
   if (!inventory) {
     inventory = await Inventory.create({ product: productId, bin: binId, quantity, reserved: 0 });
@@ -44,17 +42,54 @@ const createReturn = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Return processed successfully', returned });
 });
 
-// GET /api/returns - List all returns
 const getReturns = asyncHandler(async (req, res) => {
   const returns = await Return.find({})
     .populate('salesOrder', 'customer status totalAmount')
     .populate('product', 'name sku');
-   res.json({
+  res.json({
     message: 'Returns fetched successfully',
     returns
   });
 });
 
+const updateReturn = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { quantity, reason, status } = req.body;
+
+  const returned = await Return.findById(id);
+  if (!returned) return res.status(404).json({ message: 'Return not found' });
+
+  if (quantity && quantity !== returned.quantity) {
+    const inventory = await Inventory.findOne({ product: returned.product, bin: returned.bin });
+    if (inventory) {
+      inventory.quantity += quantity - returned.quantity;
+      await inventory.save();
+    }
+    returned.quantity = quantity;
+  }
+
+  if (reason) returned.reason = reason;
+  if (status) returned.status = status;
+
+  await returned.save();
+  res.json({ message: 'Return updated successfully', returned });
+});
 
 
-module.exports = { createReturn, getReturns};
+const deleteReturn = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const returned = await Return.findById(id);
+  if (!returned) return res.status(404).json({ message: 'Return not found' });
+
+  const inventory = await Inventory.findOne({ product: returned.product, bin: returned.bin });
+  if (inventory) {
+    inventory.quantity -= returned.quantity;
+    await inventory.save();
+  }
+
+  await returned.deleteOne();
+  res.json({ message: 'Return deleted successfully', id });
+});
+
+module.exports = { createReturn, getReturns, updateReturn, deleteReturn };

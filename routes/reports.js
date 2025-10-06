@@ -1,10 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { getStockLevels,getSalesReport } = require('../controllers/reportController');
-const { protect } = require('../middleware/auth'); // if using auth
+const {
+  getStockLevels,
+  updateStock,
+  deleteStock,
+  getSalesReport,
+  updateSalesOrder,
+  deleteSalesOrder
+} = require('../controllers/reportController');
 
-router.get('/stock-levels', protect, getStockLevels);
-router.get('/sales', protect, getSalesReport);
+// Stock
+router.get('/stock-levels', getStockLevels);
+router.put('/stock-levels/:id', updateStock);
+router.delete('/stock-levels/:id', deleteStock);
 
+// Sales Orders
+router.get('/sales', getSalesReport);
+router.put('/sales/:id', updateSalesOrder);
+router.delete('/sales/:id', deleteSalesOrder);
 
 module.exports = router;

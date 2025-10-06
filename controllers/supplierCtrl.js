@@ -24,4 +24,34 @@ const createSupplier = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getSuppliers, createSupplier };
+
+const updateSupplier = asyncHandler(async (req, res) => {
+  const { name, email, phone, address } = req.body;
+  const supplier = await Supplier.findById(req.params.id);
+
+  if (!supplier) {
+    return res.status(404).json({ message: 'Supplier not found' });
+  }
+
+  supplier.name = name || supplier.name;
+  supplier.email = email || supplier.email;
+  supplier.phone = phone || supplier.phone;
+  supplier.address = address || supplier.address;
+
+  const updatedSupplier = await supplier.save();
+  res.json({ message: 'Supplier updated successfully', supplier: updatedSupplier });
+});
+
+
+const deleteSupplier = asyncHandler(async (req, res) => {
+  const supplier = await Supplier.findById(req.params.id);
+  if (!supplier) {
+    return res.status(404).json({ message: 'Supplier not found' });
+  }
+
+  await supplier.deleteOne();
+  res.json({ message: 'Supplier deleted successfully' });
+});
+
+
+module.exports = { getSuppliers, createSupplier ,updateSupplier,deleteSupplier};

@@ -1,20 +1,26 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
+const TokenBlacklist = require('../models/TokenBlacklist');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token = null;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
-    if (!token && req.cookies && req.cookies.token) {
-    token = req.cookies.token;
+
+    if (!token) {
+    return res.status(401).json({ message: 'Please login to access this resource' });
   }
 
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+  const blacklisted = await TokenBlacklist.findOne({ token });
+  if (blacklisted) {
+    return res.status(401).json({ message: 'Token expired or invalid, please login again' });
   }
 
   try {
@@ -26,7 +32,7 @@ const protect = asyncHandler(async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
+      return res.status(401).json({ message: 'Session expired, please login again' });
     }
     return res.status(401).json({ message: 'Token invalid' });
   }

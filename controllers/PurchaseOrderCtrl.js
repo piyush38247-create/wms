@@ -3,9 +3,7 @@ const PurchaseOrder = require('../models/PurchaseOrder');
 const Supplier = require('../models/Supplier');
 const Product = require('../models/Product');
 
-// @desc    Get all Purchase Orders
-// @route   GET /api/purchase-orders
-// @access  Private
+
 const getPurchaseOrders = asyncHandler(async (req, res) => {
   const pos = await PurchaseOrder.find({})
     .populate('supplier', 'name email')
@@ -13,9 +11,7 @@ const getPurchaseOrders = asyncHandler(async (req, res) => {
   res.json(pos);
 });
 
-// @desc    Create Purchase Order
-// @route   POST /api/purchase-orders
-// @access  Private
+
 const createPurchaseOrder = asyncHandler(async (req, res) => {
   const { supplierId, products, notes } = req.body;
 
@@ -26,24 +22,31 @@ const createPurchaseOrder = asyncHandler(async (req, res) => {
   const supplier = await Supplier.findById(supplierId);
   if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
 
-  // validate products
   let totalAmount = 0;
+  const productList = [];
+
   for (let item of products) {
     const prod = await Product.findById(item.product);
     if (!prod) return res.status(404).json({ message: `Product not found: ${item.product}` });
-    totalAmount += item.price * item.quantity;
+
+    const quantity = item.quantity || 1;
+    const price = prod.price; 
+
+    totalAmount += price * quantity;
+
+    productList.push({ product: item.product, quantity, price });
   }
 
   const po = await PurchaseOrder.create({
     supplier: supplierId,
-    products,
+    products: productList,
     totalAmount,
     notes
   });
 
   const populatedPO = await PurchaseOrder.findById(po._id)
     .populate('supplier', 'name email')
-    .populate('products.product', 'name sku');
+    .populate('products.product', 'name sku price');
 
   res.status(201).json({
     message: 'Purchase Order created successfully',
@@ -51,4 +54,68 @@ const createPurchaseOrder = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getPurchaseOrders, createPurchaseOrder };
+
+const updatePurchaseOrder = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { supplierId, products, notes, status } = req.body;
+
+  const purchaseOrder = await PurchaseOrder.findById(id);
+  if (!purchaseOrder) return res.status(404).json({ message: 'Purchase Order not found' });
+
+  if (supplierId) {
+    const supplier = await Supplier.findById(supplierId);
+    if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
+    purchaseOrder.supplier = supplierId;
+  }
+
+  if (products && products.length > 0) {
+    let totalAmount = 0;
+    const productList = [];
+
+    for (let item of products) {
+      const prod = await Product.findById(item.product);
+      if (!prod) return res.status(404).json({ message: `Product not found: ${item.product}` });
+
+      const quantity = item.quantity || 1;
+      const price = prod.price; 
+      totalAmount += price * quantity;
+      productList.push({ product: item.product, quantity, price });
+    }
+
+    purchaseOrder.products = productList;
+    purchaseOrder.totalAmount = totalAmount;
+  }
+
+  if (notes) purchaseOrder.notes = notes;
+  if (status) purchaseOrder.status = status;
+
+  await purchaseOrder.save();
+
+  const updated = await PurchaseOrder.findById(id)
+    .populate('supplier', 'name email')
+    .populate('products.product', 'name sku price');
+
+  res.json({
+    message: 'Purchase Order updated successfully',
+    purchaseOrder: updated
+  });
+});
+
+
+
+const deletePurchaseOrder = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const purchaseOrder = await PurchaseOrder.findById(id);
+  if (!purchaseOrder) return res.status(404).json({ message: 'Purchase Order not found' });
+
+  await purchaseOrder.deleteOne();
+
+  res.json({
+    message: 'Purchase Order deleted successfully',
+    id
+  });
+});
+
+
+module.exports = { getPurchaseOrders, createPurchaseOrder,deletePurchaseOrder ,updatePurchaseOrder};
